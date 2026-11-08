@@ -1,0 +1,10 @@
+/node_modules
+/dist
+/.angular
+/.tools
+/coverage
+*.log
+/.vscode/*
+!/.vscode/extensions.json
+.editorconfig
+.node-version

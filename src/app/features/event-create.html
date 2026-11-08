@@ -1,0 +1,108 @@
+<a class="back-link" routerLink="/eventos">← Volver a eventos</a>
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">NUEVO REGISTRO</span>
+    <h1>Registrar evento</h1>
+    <p>Describe lo ocurrido para iniciar su revisión.</p>
+  </div>
+</div>
+@if (session.user()?.role !== 'reportante') {
+  <div class="alert info" role="status">Solo los reportantes pueden registrar eventos.</div>
+} @else {
+  <div class="form-layout">
+    <form class="panel form-panel" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="panel-heading">
+        <h2>Información del evento</h2>
+        <p>Todos los campos son obligatorios.</p>
+      </div>
+      @if (error()) {
+        <div class="alert error" role="alert">{{ error() }}</div>
+      }
+      <fieldset [disabled]="saving()">
+        <div class="field">
+          <label for="titulo">Título</label
+          ><input
+            id="titulo"
+            formControlName="titulo"
+            maxlength="120"
+            placeholder="Ej. Baranda suelta en plataforma de acceso"
+            [attr.aria-invalid]="invalid('titulo')"
+            aria-describedby="titulo-help"
+          /><span class="field-hint" id="titulo-help"
+            >Entre 5 y 120 caracteres. {{ form.controls.titulo.value.length }}/120</span
+          >
+          @if (invalid('titulo')) {
+            <span class="field-error"
+              >Escribe un título de 5 a 120 caracteres, sin contar espacios en los extremos.</span
+            >
+          }
+        </div>
+        <div class="field">
+          <label for="descripcion">Descripción</label
+          ><textarea
+            id="descripcion"
+            rows="5"
+            formControlName="descripcion"
+            maxlength="2000"
+            placeholder="¿Qué ocurrió? Incluye los antecedentes necesarios."
+            [attr.aria-invalid]="invalid('descripcion')"
+            aria-describedby="descripcion-help"
+          ></textarea
+          ><span class="field-hint" id="descripcion-help"
+            >Máximo 2.000 caracteres. {{ form.controls.descripcion.value.length }}/2000</span
+          >
+          @if (invalid('descripcion')) {
+            <span class="field-error"
+              >La descripción es obligatoria y debe tener como máximo 2.000 caracteres.</span
+            >
+          }
+        </div>
+        <div class="fields-row">
+          <div class="field">
+            <label for="fecha">Fecha del evento</label
+            ><input
+              id="fecha"
+              type="date"
+              formControlName="fechaEvento"
+              [max]="today"
+              [attr.aria-invalid]="invalid('fechaEvento')"
+            />
+            @if (invalid('fechaEvento')) {
+              <span class="field-error">Selecciona una fecha válida que no sea futura.</span>
+            }
+          </div>
+          <div class="field">
+            <label for="area">Área</label
+            ><select id="area" formControlName="area" [attr.aria-invalid]="invalid('area')">
+              <option value="" disabled>Selecciona un área</option>
+              @for (area of areas; track area) {
+                <option [value]="area">{{ area }}</option>
+              }
+            </select>
+            @if (invalid('area')) {
+              <span class="field-error">Selecciona el área del evento.</span>
+            }
+          </div>
+        </div>
+      </fieldset>
+      <div class="form-actions">
+        <a class="button secondary" routerLink="/eventos">Cancelar</a
+        ><button class="button primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Registrando…' : 'Registrar evento' }}
+        </button>
+      </div>
+    </form>
+    <aside class="form-aside">
+      <span class="tiny-label">QUÉ OCURRE DESPUÉS</span>
+      <h2>Un registro, un punto de partida.</h2>
+      <p>El evento quedará <strong>reportado</strong> y disponible para el revisor.</p>
+      <p>
+        El servidor asigna el estado y el reportante. Desde el detalle podrás consultar las acciones
+        y el historial.
+      </p>
+      <div class="aside-user">
+        Registrando como<strong>{{ session.user()?.id }}</strong>
+      </div>
+    </aside>
+  </div>
+}

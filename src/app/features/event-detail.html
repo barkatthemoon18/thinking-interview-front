@@ -1,0 +1,228 @@
+<a class="back-link" [routerLink]="session.homePath()"
+  >← {{ session.user()?.role === 'revisor' ? 'Volver a revisiones' : 'Volver a mis eventos' }}</a
+>
+@if (error()) {
+  <div class="alert error" role="alert">
+    {{ error() }}
+    <button class="text-button" (click)="load()" [disabled]="loading() || busy()">
+      Volver a consultar
+    </button>
+  </div>
+}
+@if (success()) {
+  <div class="alert success" role="status">{{ success() }}</div>
+}
+@if (loading()) {
+  <div class="panel empty" role="status">
+    <span class="spinner"></span>
+    <h2>Cargando detalle</h2>
+  </div>
+} @else if (event(); as item) {
+  <div class="page-heading detail-heading">
+    <div>
+      <span class="eyebrow">EVENTO #{{ item.id }}</span>
+      <h1>{{ item.titulo }}</h1>
+      <p>Registrado por {{ item.reportante }}</p>
+    </div>
+    <app-status [status]="item.estado" />
+  </div>
+  <div class="detail-layout">
+    <div class="detail-main">
+      <section class="panel content-panel" aria-labelledby="info-title">
+        <h2 id="info-title">Información del evento</h2>
+        <dl class="metadata">
+          <div>
+            <dt>ÁREA</dt>
+            <dd>{{ item.area }}</dd>
+          </div>
+          <div>
+            <dt>FECHA DEL EVENTO</dt>
+            <dd>{{ item.fechaEvento | date: 'dd MMMM yyyy' }}</dd>
+          </div>
+        </dl>
+        <h3 class="tiny-label">DESCRIPCIÓN</h3>
+        <p class="preserve-text">{{ item.descripcion }}</p>
+      </section>
+      <section class="panel content-panel" aria-labelledby="actions-title">
+        <div class="card-title">
+          <h2 id="actions-title">
+            Acciones correctivas <span class="count">{{ item.acciones.length }}</span>
+          </h2>
+          <span class="muted small-text">{{ pending() }} pendientes</span>
+        </div>
+        @if (!item.acciones.length) {
+          <div class="inline-empty">
+            <span aria-hidden="true">☷</span>
+            <p>No hay acciones asociadas a este evento.</p>
+          </div>
+        }
+        @for (action of item.acciones; track action.id) {
+          <article class="action-item">
+            <div class="action-top">
+              <span class="badge" [class]="action.estado">{{
+                action.estado === 'pendiente' ? 'Pendiente' : 'Completada'
+              }}</span>
+              @if (
+                session.user()?.role === 'revisor' &&
+                item.estado === 'en_revision' &&
+                action.estado === 'pendiente'
+              ) {
+                <button
+                  class="button secondary small"
+                  [disabled]="busy()"
+                  (click)="complete(action.id)"
+                >
+                  Marcar completada
+                </button>
+              }
+            </div>
+            <p class="preserve-text">{{ action.descripcion }}</p>
+            <div class="action-meta">
+              <span
+                >Responsable <strong>{{ action.responsable }}</strong></span
+              ><span
+                >Fecha objetivo
+                <strong>{{ action.fechaObjetivo | date: 'dd MMM yyyy' }}</strong></span
+              >
+            </div>
+          </article>
+        }
+        @if (session.user()?.role === 'revisor' && item.estado === 'en_revision') {
+          <form class="action-form" [formGroup]="actionForm" (ngSubmit)="addAction()">
+            <h3>Nueva acción correctiva</h3>
+            <fieldset [disabled]="busy()">
+              <div class="field">
+                <label for="action-description">Descripción</label
+                ><textarea
+                  id="action-description"
+                  rows="3"
+                  formControlName="descripcion"
+                  maxlength="500"
+                  [attr.aria-invalid]="invalid('descripcion')"
+                  placeholder="Describe la medida correctiva"
+                ></textarea
+                ><span class="field-hint">Entre 5 y 500 caracteres.</span>
+                @if (invalid('descripcion')) {
+                  <span class="field-error">Escribe una descripción de 5 a 500 caracteres.</span>
+                }
+              </div>
+              <div class="fields-row">
+                <div class="field">
+                  <label for="responsable">Responsable</label
+                  ><input
+                    id="responsable"
+                    maxlength="30"
+                    formControlName="responsable"
+                    placeholder="Nombre ficticio"
+                    [attr.aria-invalid]="invalid('responsable')"
+                  />
+                  @if (invalid('responsable')) {
+                    <span class="field-error"
+                      >El responsable debe tener entre 1 y 30 caracteres.</span
+                    >
+                  }
+                </div>
+                <div class="field">
+                  <label for="target-date">Fecha objetivo</label
+                  ><input
+                    id="target-date"
+                    type="date"
+                    formControlName="fechaObjetivo"
+                    [min]="item.fechaEvento"
+                    [attr.aria-invalid]="invalid('fechaObjetivo')"
+                  />
+                  @if (invalid('fechaObjetivo')) {
+                    <span class="field-error">La fecha no puede ser anterior a la del evento.</span>
+                  }
+                </div>
+              </div>
+            </fieldset>
+            <button class="button primary" type="submit" [disabled]="busy()">
+              {{ busy() ? 'Procesando…' : 'Agregar acción' }}
+            </button>
+          </form>
+        } @else {
+          <p class="section-footnote">
+            {{
+              item.estado === 'cerrado'
+                ? 'El evento está cerrado. Sus acciones son de solo lectura.'
+                : item.estado === 'reportado'
+                  ? 'Las acciones se gestionan cuando el evento está en revisión.'
+                  : 'Solo el revisor puede crear y completar acciones.'
+            }}
+          </p>
+        }
+      </section>
+      <section class="panel content-panel" aria-labelledby="history-title">
+        <h2 id="history-title">Historial</h2>
+        <p class="muted">Actividad del evento, de la más reciente a la más antigua.</p>
+        @if (!history().length) {
+          <p class="section-footnote">
+            La API no devolvió registros de historial para este evento.
+          </p>
+        }
+        <ol class="timeline">
+          @for (entry of history(); track entry.id) {
+            <li>
+              <div class="timeline-dot" aria-hidden="true"></div>
+              <div>
+                <p class="preserve-text">{{ entry.cambio }}</p>
+                <span
+                  ><strong>{{ entry.actor }}</strong> ·
+                  {{ entry.fecha | date: 'dd MMM yyyy, HH:mm:ss' }}</span
+                >
+              </div>
+            </li>
+          }
+        </ol>
+      </section>
+    </div>
+    <aside class="detail-aside">
+      <section class="panel content-panel">
+        <span class="tiny-label">ESTADO DEL EVENTO</span>
+        <ol class="status-steps">
+          <li class="done"><span>1</span>Reportado</li>
+          <li
+            [class.done]="item.estado !== 'reportado'"
+            [class.current]="item.estado === 'en_revision'"
+          >
+            <span>2</span>En revisión
+          </li>
+          <li [class.done]="item.estado === 'cerrado'"><span>3</span>Cerrado</li>
+        </ol>
+        @if (session.user()?.role === 'revisor') {
+          @if (item.estado === 'reportado') {
+            <p>Inicia la revisión para gestionar las acciones correctivas.</p>
+            <button
+              class="button primary full-width"
+              [disabled]="busy()"
+              (click)="transition('en_revision')"
+            >
+              Pasar a revisión →
+            </button>
+          } @else if (item.estado === 'en_revision') {
+            <p>
+              {{
+                pending()
+                  ? 'Completa las acciones pendientes antes de cerrar el evento.'
+                  : 'Todas las acciones están resueltas. Puedes cerrar el evento.'
+              }}
+            </p>
+            <button
+              class="button primary full-width"
+              [disabled]="busy() || pending() > 0"
+              (click)="transition('cerrado')"
+            >
+              Cerrar evento
+            </button>
+          } @else {
+            <p>La revisión finalizó. El evento no puede reabrirse.</p>
+          }
+        } @else {
+          <p>El revisor es quien puede cambiar el estado del evento.</p>
+        }
+      </section>
+      <p class="aside-caption">Las reglas y los permisos deben verificarse también en tu API.</p>
+    </aside>
+  </div>
+}

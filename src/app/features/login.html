@@ -1,0 +1,71 @@
+<div class="login-layout">
+  <section class="login-story" aria-labelledby="welcome-title">
+    <a routerLink="/login" class="brand" aria-label="Thinking, inicio"
+      ><span class="brand-mark">T</span>thinking<span class="brand-dot">.</span></a
+    >
+    <div class="login-story-content">
+      <span class="tiny-label">GESTIÓN DE EVENTOS</span>
+      <h1 id="welcome-title">Cada evento, <br />un paso hacia <br />la solución.</h1>
+      <p>Registra lo que ocurre, coordina las acciones y acompaña cada evento hasta su cierre.</p>
+      <div class="login-steps">
+        <span>01 <strong>Registrar</strong></span
+        ><span>02 <strong>Revisar</strong></span
+        ><span>03 <strong>Resolver</strong></span>
+      </div>
+    </div>
+    <span class="login-story-footer">Thinking SpA · Caso práctico</span>
+  </section>
+  <section class="login-entry" aria-labelledby="login-title">
+    <span class="login-mode"
+      ><i class="connection-dot" [class.api]="config.settings().mode === 'api'"></i
+      >{{ config.settings().mode === 'api' ? 'Entorno de prueba' : 'Demo local' }}</span
+    >
+    <div class="login-form-wrap">
+      <span class="eyebrow">BIENVENIDO</span>
+      <h2 id="login-title">Ingresa a tu espacio</h2>
+      <p class="login-intro">
+        Accede con tu usuario. Te llevaremos al portal correspondiente a tu perfil.
+      </p>
+      @if (session.notice()) {
+        <div class="alert info" role="status">{{ session.notice() }}</div>
+      }
+      @if (error()) {
+        <div class="alert error" role="alert">{{ error() }}</div>
+      }
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="field">
+          <label for="username">Nombre de usuario</label
+          ><input
+            id="username"
+            type="text"
+            formControlName="username"
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
+            placeholder="Escribe tu usuario"
+            [readOnly]="loading()"
+            [attr.aria-invalid]="form.controls.username.touched && form.controls.username.invalid"
+            aria-describedby="username-help"
+          />
+          @if (form.controls.username.touched && form.controls.username.invalid) {
+            <span class="field-error" id="username-help"
+              >Escribe tu nombre de usuario para continuar.</span
+            >
+          }
+        </div>
+        <button class="button primary full-width login-submit" type="submit" [disabled]="loading()">
+          {{ loading() ? 'Ingresando…' : 'Ingresar' }} <span aria-hidden="true">→</span>
+        </button>
+      </form>
+      <div class="login-test-users">
+        <span class="tiny-label">USUARIOS DE PRUEBA</span>
+        <p><code>reportante1</code><code>reportante2</code><code>revisor1</code></p>
+        <span>El perfil se obtiene al iniciar sesión.</span>
+      </div>
+    </div>
+    <div class="login-entry-footer">
+      <span>Solo datos ficticios</span
+      ><a routerLink="/conexion">Configurar conexión <span aria-hidden="true">↗</span></a>
+    </div>
+  </section>
+</div>

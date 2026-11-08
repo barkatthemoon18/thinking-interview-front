@@ -1,0 +1,79 @@
+<a class="skip-link" href="#contenido">Ir al contenido</a>
+<div class="app-layout" [class.guest-layout]="!session.user()">
+  @if (session.user(); as user) {
+    <aside class="sidebar">
+      <a [routerLink]="session.homePath()" class="brand" aria-label="Thinking, inicio"
+        ><span class="brand-mark">T</span>thinking<span class="brand-dot">.</span></a
+      >
+      <div class="workspace-label">
+        {{ user.role === 'revisor' ? 'PORTAL DEL REVISOR' : 'PORTAL DEL REPORTANTE' }}
+        <span>01</span>
+      </div>
+      <nav aria-label="Navegación principal">
+        @if (user.role === 'reportante') {
+          <a
+            routerLink="/eventos"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            ><span aria-hidden="true">▤</span> Mis eventos</a
+          >
+          <a routerLink="/eventos/nuevo" routerLinkActive="active"
+            ><span aria-hidden="true">＋</span> Registrar evento</a
+          >
+        } @else {
+          <a routerLink="/revisiones" routerLinkActive="active"
+            ><span aria-hidden="true">▤</span> Revisiones</a
+          >
+        }
+        <a routerLink="/conexion" routerLinkActive="active"
+          ><span aria-hidden="true">⇄</span> Conexión API</a
+        >
+      </nav>
+      <div class="sidebar-note">
+        <span class="tiny-label">TU ESPACIO DE TRABAJO</span>
+        <p>
+          {{ user.role === 'revisor' ? 'Revisar.' : 'Registrar.' }}<br />{{
+            user.role === 'revisor' ? 'Gestionar.' : 'Consultar.'
+          }}<br />{{ user.role === 'revisor' ? 'Resolver.' : 'Seguir.' }}
+        </p>
+        <span>Gestión de eventos y<br />acciones correctivas.</span>
+      </div>
+      <div class="sidebar-footer">Thinking SpA <span>Entorno de prueba</span></div>
+    </aside>
+  }
+  <div class="main-layout">
+    @if (session.user(); as user) {
+      <header class="topbar">
+        <div class="environment">
+          <span class="connection-dot" [class.api]="config.settings().mode === 'api'"></span
+          >{{ config.settings().mode === 'demo' ? 'Demo local' : 'API real'
+          }}<span class="topbar-divider">/</span><span class="muted">Datos ficticios</span>
+        </div>
+        <div class="account-menu">
+          <span class="account-avatar" aria-hidden="true">{{
+            user.id.slice(0, 1).toUpperCase()
+          }}</span
+          ><span class="account-identity"
+            ><strong>{{ user.id }}</strong
+            ><span>{{ user.role === 'revisor' ? 'Revisor' : 'Reportante' }}</span></span
+          ><button class="button secondary small" (click)="logout()">Cerrar sesión</button>
+        </div>
+      </header>
+      @if (config.settings().mode === 'demo') {
+        <div class="mode-notice">
+          Estás en una simulación en memoria.
+          <a routerLink="/conexion">Conectar mi API <span aria-hidden="true">↗</span></a>
+        </div>
+      }
+    }
+    <main id="contenido" tabindex="-1" [class.public-main]="!session.user()">
+      <router-outlet />
+    </main>
+    @if (session.user()) {
+      <footer class="page-footer">
+        <span>Thinking / Gestión de eventos</span
+        ><span>Identidad simulada · Solo para pruebas</span>
+      </footer>
+    }
+  </div>
+</div>

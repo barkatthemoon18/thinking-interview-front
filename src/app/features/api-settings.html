@@ -1,0 +1,156 @@
+<a class="back-link" [routerLink]="session.homePath()"
+  >← {{ session.user() ? 'Volver a mi portal' : 'Volver al login' }}</a
+>
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">INTEGRACIÓN Y PRUEBAS</span>
+    <h1>Conexión API</h1>
+    <p>Configura los endpoints de cada sección y revisa las respuestas HTTP.</p>
+  </div>
+  <span class="badge" [class]="config.settings().mode === 'demo' ? 'pendiente' : 'completada'">{{
+    config.settings().mode === 'demo' ? 'Demo activa' : 'API activa'
+  }}</span>
+</div>
+@if (message()) {
+  <div class="alert success" role="status">{{ message() }}</div>
+}
+@if (config.storageWarning()) {
+  <div class="alert info" role="status">{{ config.storageWarning() }}</div>
+}
+@if (error()) {
+  <div class="alert error" role="alert">{{ error() }}</div>
+}
+<form class="panel content-panel settings-panel" (ngSubmit)="save()">
+  <div class="panel-heading">
+    <h2>Destino de las solicitudes</h2>
+    <p>Los cambios se aplican al guardar y se conservan en este navegador.</p>
+  </div>
+  <div class="mode-options">
+    <label [class.selected]="draft.mode === 'demo'"
+      ><input type="radio" name="mode" value="demo" [(ngModel)]="draft.mode" /><span
+        ><strong>Demo local</strong><small>Recorre el flujo con datos en memoria.</small></span
+      ></label
+    ><label [class.selected]="draft.mode === 'api'"
+      ><input type="radio" name="mode" value="api" [(ngModel)]="draft.mode" /><span
+        ><strong>API real</strong><small>Envía cada operación a tu servidor.</small></span
+      ></label
+    >
+  </div>
+  <div class="fields-row">
+    <div class="field">
+      <label for="base-url">URL base</label
+      ><input
+        id="base-url"
+        name="baseUrl"
+        [(ngModel)]="draft.baseUrl"
+        placeholder="/api"
+        spellcheck="false"
+        required
+      /><span class="field-hint">/api usa el proxy hacia http://localhost:8080/api.</span>
+    </div>
+    <div class="field">
+      <label>Identidad de prueba</label>
+      <p class="small-text">
+        Inicia sesión desde la pantalla de ingreso. Las operaciones usan
+        <code>Authorization: Bearer &lt;token&gt;</code>. El token se conserva solo en memoria.
+      </p>
+    </div>
+  </div>
+  <h3 class="endpoint-heading">Endpoints por operación</h3>
+  <p class="field-hint">Conserva los parámetros :eventId y :actionId donde corresponda.</p>
+  <div class="endpoint-list">
+    @for (operation of operations; track operation) {
+      <div class="endpoint-row">
+        <label [for]="operation + '-path'">{{ labels[operation] }}</label
+        ><select
+          [name]="operation + '-method'"
+          [(ngModel)]="draft.endpoints[operation].method"
+          [attr.aria-label]="'Método para ' + labels[operation]"
+        >
+          @for (method of methods; track method) {
+            <option [value]="method">{{ method }}</option>
+          }</select
+        ><input
+          [id]="operation + '-path'"
+          [name]="operation + '-path'"
+          [(ngModel)]="draft.endpoints[operation].path"
+          spellcheck="false"
+          required
+        />
+      </div>
+    }
+  </div>
+  <div class="alert info compact">
+    La API debe validar reglas y permisos en cada operación. El login de este caso es simulado y
+    sirve únicamente para la prueba local.
+  </div>
+  <div class="form-actions">
+    <button class="button secondary" type="button" (click)="defaults()">
+      Cargar valores iniciales</button
+    ><button class="button primary" type="submit">Guardar configuración</button>
+  </div>
+</form>
+<section class="panel content-panel requests-panel" aria-labelledby="requests-title">
+  <div class="card-title">
+    <div>
+      <h2 id="requests-title">Últimas solicitudes</h2>
+      <p class="muted small-text">
+        Hasta 12 solicitudes HTTP de esta sesión. La demo no envía solicitudes.
+      </p>
+    </div>
+    <button
+      class="button subtle small"
+      (click)="api.requests.set([])"
+      [disabled]="!api.requests().length"
+    >
+      Limpiar
+    </button>
+  </div>
+  @if (!api.requests().length) {
+    <div class="inline-empty">
+      <span aria-hidden="true">⇄</span>
+      <p>Activa API real y realiza una operación para ver su resultado aquí.</p>
+    </div>
+  }
+  @for (request of api.requests(); track $index) {
+    <details class="request-item">
+      <summary>
+        <span class="http-code" [class.failed]="request.status < 200 || request.status >= 300">{{
+          request.status || 'RED'
+        }}</span
+        ><strong>{{ request.operation }}</strong
+        ><span>{{ request.method }} · {{ request.actor }} · {{ request.duration }} ms</span
+        ><time>{{ request.date | date: 'HH:mm:ss' }}</time>
+      </summary>
+      <div class="request-content">
+        <p class="code-text">{{ request.method }} {{ request.url }}</p>
+        <h3>Solicitud JSON</h3>
+        <pre>{{ request.request | json }}</pre>
+        <h3>Respuesta de la API</h3>
+        <pre>{{ request.response | json }}</pre>
+      </div>
+    </details>
+  }
+</section>
+<section class="integration-notes">
+  <div>
+    <span class="tiny-label">CONTRATO DE DATOS</span>
+    <h2>Conecta, recorre y comprueba.</h2>
+    <p>
+      El contrato y los cuerpos JSON están documentados en README.md. Si tu API usa otros nombres,
+      adapta el mapeo en core/api.adapter.ts.
+    </p>
+    <p>
+      Para comprobar rechazos de permisos y reglas directamente contra el servidor, usa
+      <code>npm.cmd run test:api</code> siguiendo el README. La prueba crea datos ficticios.
+    </p>
+  </div>
+  <div>
+    <span class="tiny-label">DATOS DE DEMOSTRACIÓN</span>
+    <p>
+      Los cambios de la demo se pierden al recargar la página. Puedes recuperar sus cuatro eventos
+      iniciales.
+    </p>
+    <button class="button secondary" (click)="resetDemo()">Reiniciar demo</button>
+  </div>
+</section>

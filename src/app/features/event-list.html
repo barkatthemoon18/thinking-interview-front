@@ -1,0 +1,113 @@
+@if (notice()) {
+  <div class="alert success" role="status">{{ notice() }}</div>
+}
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">{{
+      session.user()?.role === 'revisor' ? 'REVISIÓN Y ACCIONES' : 'REGISTRO Y SEGUIMIENTO'
+    }}</span>
+    <h1>{{ session.user()?.role === 'revisor' ? 'Portal de revisiones' : 'Mis eventos' }}</h1>
+    <p>
+      {{
+        session.user()?.role === 'revisor'
+          ? 'Revisa los eventos y gestiona sus acciones correctivas.'
+          : 'Registra un evento y sigue el avance de su revisión.'
+      }}
+    </p>
+  </div>
+  @if (session.user()?.role === 'reportante') {
+    <a class="button primary" routerLink="/eventos/nuevo"
+      ><span aria-hidden="true">＋</span> Registrar evento</a
+    >
+  }
+</div>
+<div class="section-bar">
+  <div class="section-title">
+    {{ session.user()?.role === 'revisor' ? 'Todos los eventos' : 'Mis eventos' }}
+    @if (!loading() && !error()) {
+      <span class="count">{{ events().length }}</span>
+    }
+  </div>
+  <button class="button subtle small" (click)="load()" [disabled]="loading()">↻ Actualizar</button>
+</div>
+@if (error()) {
+  <div class="alert error" role="alert">
+    {{ error() }} <a routerLink="/conexion">Revisar conexión</a>
+  </div>
+}
+@if (loading()) {
+  <div class="panel empty" role="status">
+    <span class="spinner"></span>
+    <h2>Cargando eventos</h2>
+    <p>Consultando los registros de tu portal.</p>
+  </div>
+} @else if (!error() && !events().length) {
+  <div class="panel empty">
+    <span class="empty-icon" aria-hidden="true">▤</span>
+    <h2>Todavía no hay eventos</h2>
+    <p>
+      {{
+        session.user()?.role === 'reportante'
+          ? 'Los eventos que registres aparecerán aquí.'
+          : 'Los eventos registrados por los reportantes aparecerán aquí.'
+      }}
+    </p>
+    @if (session.user()?.role === 'reportante') {
+      <a class="button primary" routerLink="/eventos/nuevo">Registrar el primer evento</a>
+    }
+  </div>
+} @else if (!error()) {
+  <div class="panel table-wrap">
+    <table>
+      <caption class="sr-only">
+        Eventos visibles para
+        {{
+          session.user()?.id
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">EVENTO</th>
+          <th scope="col">ÁREA</th>
+          <th scope="col">FECHA</th>
+          <th scope="col">ESTADO</th>
+          <th scope="col"><span class="sr-only">Detalle</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (event of events(); track event.id) {
+          <tr>
+            <td>
+              <a class="event-title" [routerLink]="[session.homePath(), event.id]">{{
+                event.titulo
+              }}</a
+              ><span class="event-byline"
+                >{{ event.reportante }} <span>·</span> #{{ event.id }}</span
+              >
+            </td>
+            <td>{{ event.area }}</td>
+            <td class="nowrap">{{ event.fechaEvento | date: 'dd MMM yyyy' }}</td>
+            <td><app-status [status]="event.estado" /></td>
+            <td>
+              <a
+                class="row-link"
+                [routerLink]="[session.homePath(), event.id]"
+                [attr.aria-label]="'Ver ' + event.titulo"
+                >↗</a
+              >
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+<div class="flow-note">
+  <span class="tiny-label">CICLO DEL EVENTO</span>
+  <div>
+    <span><i class="flow-dot reported"></i>Reportado</span><b aria-hidden="true">→</b
+    ><span><i class="flow-dot review"></i>En revisión</span><b aria-hidden="true">→</b
+    ><span><i class="flow-dot closed"></i>Cerrado</span>
+  </div>
+  <p>El revisor avanza el estado. Las acciones pendientes deben completarse antes del cierre.</p>
+</div>
